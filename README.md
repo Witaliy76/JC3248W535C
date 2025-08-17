@@ -1,4 +1,6 @@
 # JC3248W535C - WiFi Интернет Радио
+для PLATFORMIO (!) Ядро 2.0.хх
+Рефакторинг на библиотеку Arduno_GFX
 
 Проект WiFi интернет-радио для модуля **JC3248W535C** на базе ESP32-S3 с дисплеем AXS15231B.
 ![photo_2025-06-20_19-28-12](https://github.com/user-attachments/assets/d0566422-2abd-48eb-a869-771cf16c25c2)
