@@ -30,7 +30,7 @@ class SDManager : public SDFS {
   private:
     uint32_t _sdFCount;
   private:
-    bool _checkNoMedia(const char* path);
+    bool _checkNoMedia(const char* path, bool mutexAlreadyTaken = false);
     bool _endsWith (const char* base, const char* str);
 };
 

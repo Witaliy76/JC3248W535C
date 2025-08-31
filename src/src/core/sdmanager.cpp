@@ -68,9 +68,15 @@ bool SDManager::cardPresent() {
   return bread;
 }
 
-bool SDManager::_checkNoMedia(const char* path){
-  if(xSemaphoreTake(sdMutex, portMAX_DELAY) != pdTRUE) {
-    return false;
+bool SDManager::_checkNoMedia(const char* path, bool mutexAlreadyTaken){
+  bool mutexTakenHere = false;
+  
+  // Захватываем mutex только если он еще не захвачен
+  if (!mutexAlreadyTaken) {
+    if(xSemaphoreTake(sdMutex, portMAX_DELAY) != pdTRUE) {
+      return false;
+    }
+    mutexTakenHere = true;
   }
   
   char nomedia[BUFLEN]= {0};
@@ -78,7 +84,11 @@ bool SDManager::_checkNoMedia(const char* path){
   strlcat(nomedia, "/.nomedia", BUFLEN);
   bool nm = exists(nomedia);
   
-  xSemaphoreGive(sdMutex);
+  // Освобождаем mutex только если мы его захватывали
+  if (mutexTakenHere) {
+    xSemaphoreGive(sdMutex);
+  }
+  
   return nm;
 }
 
@@ -124,7 +134,7 @@ void SDManager::listSD(File &plSDfile, File &plSDindex, const char* dirname, uin
         strcpy(filePath, fileName.c_str());
         const char* fn = strrchr(filePath, '/') + 1;
         if (isDir) {
-            if (levels && !_checkNoMedia(filePath)) {
+            if (levels && !_checkNoMedia(filePath, true)) { // Передаем true - mutex уже захвачен
                 xSemaphoreGive(sdMutex);  // Освобождаем перед рекурсией
                 listSD(plSDfile, plSDindex, filePath, levels - 1);
                 if(xSemaphoreTake(sdMutex, portMAX_DELAY) != pdTRUE) {
