@@ -214,7 +214,7 @@ uint16_t TextWidget::_realLeft() {
 
 void TextWidget::_draw() {
   if(!_active || !gfx) return;
-  gfxDrawText(gfx, _realLeft(), _config.top, _text, _fgcolor, _bgcolor, _config.textsize);
+  gfxDrawText(gfx, _realLeft(), _config.top, _text, _fgcolor, _bgcolor, _config.textsize, nullptr, _uppercase);
   strlcpy(_oldtext, _text, _buffsize);
 }
 
@@ -283,10 +283,10 @@ void ScrollWidget::setText(const char* txt) {
     if (_doscroll) {
         gfxFillRect(gfx, _config.left,  _config.top, _width, _textheight, _bgcolor);
         snprintf(_window, _width / _charWidth + 1, "%s", _text); //TODO: прокрутка
-        gfxDrawText(gfx, _config.left, _config.top, _window, _fgcolor, _bgcolor, _config.textsize);
+        gfxDrawText(gfx, _config.left, _config.top, _window, _fgcolor, _bgcolor, _config.textsize, nullptr, _uppercase);
     } else {
       gfxFillRect(gfx, _config.left, _config.top, _width, _textheight, _bgcolor);
-      gfxDrawText(gfx, _realLeft(), _config.top, _text, _fgcolor, _bgcolor, _config.textsize);
+      gfxDrawText(gfx, _realLeft(), _config.top, _text, _fgcolor, _bgcolor, _config.textsize, nullptr, _uppercase);
     }
     strlcpy(_oldtext, _text, _buffsize);
   }
@@ -336,9 +336,9 @@ void ScrollWidget::_draw() {
     }
     int16_t drawX = _fx + hiddenChars * _charWidth;
     if (drawX < _config.left) drawX = _config.left;
-    gfxDrawText(gfx, drawX, _config.top, _window, _fgcolor, _bgcolor, _config.textsize);
+    gfxDrawText(gfx, drawX, _config.top, _window, _fgcolor, _bgcolor, _config.textsize, nullptr, _uppercase);
   } else {
-    gfxDrawText(gfx, _realLeft(), _config.top, _text, _fgcolor, _bgcolor, _config.textsize);
+    gfxDrawText(gfx, _realLeft(), _config.top, _text, _fgcolor, _bgcolor, _config.textsize, nullptr, _uppercase);
   }
 }
 
@@ -568,8 +568,8 @@ void VuWidget::_draw() {
       textX += labelLeftmostOffset;
       textXtop += labelLeftmostOffset;
     }
-    gfxDrawText(gfx, textX, textY, marksGreen[m].label, color, _bgcolor, fontSize);
-    gfxDrawText(gfx, textXtop, textYtop, marksGreen[m].label, color, _bgcolor, fontSize);
+    gfxDrawText(gfx, textX, textY, marksGreen[m].label, color, _bgcolor, fontSize, nullptr, false);
+    gfxDrawText(gfx, textXtop, textYtop, marksGreen[m].label, color, _bgcolor, fontSize, nullptr, false);
   }
   // --- Красная часть шкалы ---
   for (int m = 0; m < numRedMarks; ++m) {
@@ -586,8 +586,8 @@ void VuWidget::_draw() {
     int textX = x - strlen(marksRed[m].label)*3;
     int textYtop = _config.top + _bands.height + (vuChannelGap / 2) - h/2 + labelOffsetTop;
     int textXtop = textX;
-    gfxDrawText(gfx, textX, textY, marksRed[m].label, color, _bgcolor, fontSize);
-    gfxDrawText(gfx, textXtop, textYtop, marksRed[m].label, color, _bgcolor, fontSize);
+    gfxDrawText(gfx, textX, textY, marksRed[m].label, color, _bgcolor, fontSize, nullptr, false);
+    gfxDrawText(gfx, textXtop, textYtop, marksRed[m].label, color, _bgcolor, fontSize, nullptr, false);
   }
   // --- Короткие деления (зелёная зона) ---
   for (int i = 0; i < 20; ++i) {
@@ -668,7 +668,7 @@ void NumWidget::_getBounds() {
 void NumWidget::_draw() {
   if(!_active || !gfx) return;
   _clear();
-  gfxDrawText(gfx, _realLeft(), _config.top, _text, _fgcolor, _bgcolor, _config.textsize, &DS_DIGI56pt7b);
+  gfxDrawText(gfx, _realLeft(), _config.top, _text, _fgcolor, _bgcolor, _config.textsize, &DS_DIGI56pt7b, _uppercase);
   strlcpy(_oldtext, _text, _buffsize);
 }
 
@@ -698,7 +698,7 @@ void ProgressWidget::_progress() {
   _clear();
   
   // Рисуем новый текст
-  gfxDrawText(gfx, _realLeft(), _config.top, buf, _fgcolor, _bgcolor, _config.textsize);
+  gfxDrawText(gfx, _realLeft(), _config.top, buf, _fgcolor, _bgcolor, _config.textsize, nullptr, _uppercase);
 }
 
 bool ProgressWidget::_checkDelay(int m, uint32_t &tstamp) {
@@ -766,22 +766,29 @@ void BitrateWidget::setFormat(BitrateFormat format){
   _draw();
 }
 
-void BitrateWidget::_draw(){
+void BitrateWidget::_draw() {
+  if(!_active || !gfx) return;
   _clear();
-  if(!_active || _format == BF_UNCNOWN || !gfx) return;
+  if(_format == BF_UNCNOWN) return;
 
+  // Рисуем рамку
   gfxDrawRect(gfx, _config.left, _config.top, _dimension, _dimension, _fgcolor);
+  
+  // Заливаем нижнюю часть
   gfxFillRect(gfx, _config.left, _config.top + _dimension/2+1, _dimension, _dimension/2-1, _fgcolor);
 
-  if(_bitrate < 1000) {
-    snprintf(_buf, 6, "%d", (int)_bitrate);
+  // Форматируем битрейт
+  if(_bitrate < 999) {
+    snprintf(_buf, 6, "%d", _bitrate);
   } else {
     float _br = (float)_bitrate / 1000;
     snprintf(_buf, 6, "%.1f", _br);
   }
 
-  gfxDrawText(gfx, _config.left + _dimension/2 - _charWidth*strlen(_buf)/2 + 1, _config.top + _dimension/4 - _textheight/2 + 2, _buf, _fgcolor, _bgcolor, _config.textsize);
+  // Отображаем битрейт
+  gfxDrawText(gfx, _config.left + _dimension/2 - _charWidth*strlen(_buf)/2 + 1, _config.top + _dimension/4 - _textheight/2 + 2, _buf, _fgcolor, _bgcolor, _config.textsize, nullptr, false);
 
+  // Отображаем формат файла
   const char* fmt = nullptr;
   switch(_format){
     case BF_MP3:  fmt = "mp3"; break;
@@ -791,9 +798,9 @@ void BitrateWidget::_draw(){
     case BF_OGG:  fmt = "ogg"; break;
     case BF_VOR:  fmt = "vor"; break;
     case BF_OPU:  fmt = "opu"; break;
-    default:     fmt = ""; break;
+    default:      fmt = ""; break;
   }
-  gfxDrawText(gfx, _config.left + _dimension/2 - _charWidth*3/2 + 1, _config.top + _dimension - _dimension/4 - _textheight/2, fmt, _bgcolor, _fgcolor, _config.textsize);
+  gfxDrawText(gfx, _config.left + _dimension/2 - _charWidth*3/2 + 1, _config.top + _dimension - _dimension/4 - _textheight/2, fmt, _bgcolor, _fgcolor, _config.textsize, nullptr, true);
 }
 
 void BitrateWidget::_clear() {
