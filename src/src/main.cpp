@@ -67,6 +67,32 @@ void setup() {
 }
 
 void loop() {
+  // МОНИТОРИНГ ПАМЯТИ КАЖДЫЕ 30 СЕКУНД (увеличено с 10)
+  static uint32_t lastMemoryCheck = 0;
+  static size_t minMemory = SIZE_MAX;
+  static size_t maxMemory = 0;
+  
+  if (millis() - lastMemoryCheck > 30000) {  // Каждые 30 секунд
+    size_t freeHeap = ESP.getFreeHeap();
+    
+    // ОБНОВЛЕНИЕ СТАТИСТИКИ
+    if (freeHeap < minMemory) minMemory = freeHeap;
+    if (freeHeap > maxMemory) maxMemory = freeHeap;
+    
+    if (freeHeap < 80000) {  // Только экстренные ситуации
+      Serial.printf("##[EMERGENCY]# Main: EMERGENCY MEMORY! Only %u bytes free\n", freeHeap);
+      Serial.printf("##[STATS]# Main: Memory stats - Min: %u, Max: %u, Current: %u\n", 
+                   minMemory, maxMemory, freeHeap);
+      // Принудительная очистка памяти
+      heap_caps_check_integrity_all(true);
+      delay(5);
+      size_t newFreeHeap = ESP.getFreeHeap();
+      Serial.printf("##[DEBUG]# Main: After cleanup: %u bytes free (+%d)\n", 
+                   newFreeHeap, (int)(newFreeHeap - freeHeap));
+    }
+    lastMemoryCheck = millis();
+  }
+  
   telnet.loop();
   if (network.status == CONNECTED || network.status==SDREADY) {
     player.loop();
