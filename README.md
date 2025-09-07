@@ -1,10 +1,14 @@
 # JC3248W535C - WiFi Интернет Радио по проекту yoradio
-для PLATFORMIO (!) Ядро 2.0.хх
+для PLATFORMIO (!) Ядро 2.0.17 (зафиксировано в platformio.ini)
 на основе версии 0.9.434m
 
 Рефакторинг на библиотеку Ardiuno_GFX
 
 ## 📝 Лог изменений
+
+### 07.09.2025
+- ✅ **Зафиксированы ядра в PlatformIO.ini** - установлены стабильные версии ESP32 Core 2.0.17 и PlatformIO Platform 6.4.0 изза ошибок компиляции у пользователей.
+- ✅ **Добавлены файлы для замены** для воспроизведения FLAC радиостанций без заиканий (см. инструкцию ниже)
 
 ### 06.09.2025
 - ✅ **Добавление компилированных файлов** в каталог build_bin/ для удобства развертывания
@@ -102,19 +106,6 @@ src/src/displays/conf/displayAXS15231Bconf_custom.h
 - **MQTT** поддержка
 - **SD карта** для локальных файлов с исправленной индексацией
 
-### 🎵 Переключение режимов визуализации
-
-Для переключения из режима **Spectrum Analyzer** в режим обычного **VU-метра** закомментируйте эти строки в `src/myoptions.h`:
-
-```cpp
-// #define SPECTRUM_ENABLED       true
-// #define SPECTRUM_REPLACE_VU    true
-// #define HIDE_VU
-```
-
-**Режимы работы:**
-- **Spectrum Analyzer**: Анализ частотного спектра аудио (упрощенный)
-- **VU-метр**: Классический горизонтальный Vu метр
 
 
 ## 🎨 Поддерживаемые дисплеи
@@ -152,6 +143,18 @@ src/src/displays/conf/displayAXS15231Bconf_custom.h
 - [Документация AXS15231B](15231doc/AXS15231_Datasheet_V0.5_20230306.pdf)
 - [Wiki YoRadio](https://github.com/e2002/yoradio/wiki)
 - [PlatformIO документация](https://docs.platformio.org/)
+🎵 Переключение режимов визуализации
+
+Для переключения из режима **Spectrum Analyzer** в режим обычного **VU-метра** закомментируйте эти строки в `src/myoptions.h`:
+
+// #define SPECTRUM_ENABLED       true
+// #define SPECTRUM_REPLACE_VU    true
+// #define HIDE_VU
+
+**Режимы работы:**
+- **Spectrum Analyzer**: Анализ частотного спектра аудио (упрощенный)
+- **VU-метр**: Классический горизонтальный Vu метр
+
 
 ## 🤝 Вклад в проект
 
@@ -171,6 +174,41 @@ src/src/displays/conf/displayAXS15231Bconf_custom.h
 - [Arduino_GFX](https://github.com/moononournation/Arduino_GFX) - графическая библиотека
 - Сообщество Yoradio 4pda.to разработчиков
 
+## 🔧 Инструкция по замене библиотек для улучшения воспроизведения FLAC
+
+Для устранения заиканий и прерываний при воспроизведении интернет-радио (особенно FLAC станций) необходимо заменить библиотеку `liblwip.a`:
+
+### Шаги замены:
+
+1. **Найдите файл для замены** в проекте:
+   ```
+   C:\project\JC3248W535C\lib_for_flac\2_0_17\liblwip.a
+   ```
+
+2. **Замените файлы** в следующих директориях PlatformIO:
+   
+   **Для ESP32-S3:**
+   ```
+   C:\Users\<User name>\.platformio\packages\framework-arduinoespressif32\tools\sdk\esp32s3\lib\
+   ```
+   
+   **Для ESP32:**
+   ```
+   C:\Users\<User name>\.platformio\packages\framework-arduinoespressif32\tools\sdk\esp32\lib\
+   ```
+
+3. **Скопируйте** файл `liblwip.a` из папки проекта в обе директории, заменив существующие файлы
+
+4. **Перекомпилируйте** проект
+
+### Что это дает:
+- ✅ Устранение заиканий при воспроизведении
+- ✅ Стабильная работа с FLAC радиостанциями
+- ✅ Улучшенная производительность TCP соединений
+- ✅ Оптимизированные настройки LWIP библиотеки
+
+**Примечание**: Замена работает с ESP32 Arduino Core версий 2.0.6 - 2.0.17
+
 ## 📞 Поддержка
 
 - **Issues**: [GitHub Issues](https://github.com/Witaliy76/JC3248W535C/issues)
@@ -179,6 +217,6 @@ src/src/displays/conf/displayAXS15231Bconf_custom.h
 ---
 
 **Версия**: beta  
-**Последнее обновление**: август 2025  
+**Последнее обновление**: 07.09.2025  
 **Автор**: W76W 
 **Платформа**: PlatformIO + ESP32 Arduino Core 2.0.xx
